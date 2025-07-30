@@ -1,0 +1,62 @@
+name: 'Terraform Local Destroy'
+description: "Performs a Terraform Destroy"
+inputs:
+  business-unit-name:
+    required: true
+  platform:
+    required: true
+  environment:
+    required: true
+  service-name:
+    required: true
+  revision:
+    required: true
+  git-organization:
+    required: true    
+  deployment_key:
+    required: true
+  aws-region:
+    required: true
+    description: Region where to run Terraform script
+  aws-bucket-prefix:
+    required: true
+  fs-shared-username:
+    required: true
+  fs-shared-token:
+    required: true
+  aws-main-role:
+    required: true
+    description: Role to be used to run Terraform script
+  aws-core-role:
+    required: true
+    description: Additional role to access AWS Core Account
+  message:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Prepare Environment
+      uses: fullsteam-corp-shared/hosted-aws-shared-actions/.github/actions/tf/tf-prepare@master
+      with:
+        business-unit-name: ${{ inputs.business-unit-name }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ env.environment }}
+        service-name: ${{ inputs.service-name }}
+        git-organization: ${{ inputs.git-organization }}
+        revision: ${{ env.revision }}
+        deployment_key: ${{ inputs.deployment_key }}
+        aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
+        aws-region: ${{ inputs.aws-region }}
+        fs-shared-username: ${{ inputs.fs-shared-username }}
+        fs-shared-token: ${{ inputs.fs-shared-token }}
+        aws-main-role: ${{ inputs.aws-main-role }}
+        aws-core-role: ${{ inputs.aws-core-role }}
+
+    - name: Terraform Destroy
+      working-directory: ./terraform
+      shell: bash
+      run: terraform destroy -input=false -auto-approve

@@ -1,0 +1,123 @@
+name: 'Terraform PullRequest Validator'
+description: "Performs a Terraform Plan through TerraForm and update PR"
+inputs:
+  business-unit-name:
+    required: true
+  platform:
+    required: true
+  environment:
+    required: true
+  service-name:
+    required: true
+  revision:
+    required: true
+  git-organization:
+    required: true
+  deployment_key:
+    required: true
+  aws-bucket-prefix:
+    required: true    
+  aws-region:
+    required: true
+    description: Region where to run Terraform script
+  fs-shared-username:
+    required: true
+  fs-shared-token:
+    required: true
+  aws-main-role:
+    required: true
+    description: Role to be used to run Terraform script
+  aws-core-role:
+    required: true
+    description: Additional role to access AWS Core Account
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - name: Prepare Environment
+      uses: fullsteam-corp-shared/hosted-aws-shared-actions/.github/actions/tf/tf-prepare@master
+      with:
+        business-unit-name: ${{ inputs.business-unit-name }}
+        platform: ${{ inputs.platform }}
+        environment: ${{ env.environment }}
+        service-name: ${{ inputs.service-name }}
+        git-organization: ${{ inputs.git-organization }}
+        revision: ${{ env.revision }}
+        deployment_key: ${{ inputs.deployment_key }}
+        aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
+        aws-region: ${{ inputs.aws-region }}
+        fs-shared-username: ${{ inputs.fs-shared-username }}
+        fs-shared-token: ${{ inputs.fs-shared-token }}
+        aws-main-role: ${{ inputs.aws-main-role }}
+        aws-core-role: ${{ inputs.aws-core-role }}
+       
+    - name: Terraform Plan
+      id: plan
+      shell: bash
+      working-directory: ./terraform
+      run: terraform plan -no-color -input=false -out raw-plan.json
+
+    - name: Terraform Output Plan
+      id: output-plan
+      shell: bash
+      working-directory: ./terraform
+      run: terraform show -json raw-plan.json > plan.json
+
+    - name: Update PR
+      uses: actions/github-script@v6
+      id: plan-comment
+      with:
+        script: |
+        
+          // 0. Read the plan JSON file
+          
+          const fs = require('fs')
+          const jsonString = fs.readFileSync('./terraform/plan.json')
+          var outcome = JSON.parse(jsonString)
+          
+          // 1. Retrieve existing bot comments for the PR
+          const { data: comments } = await github.rest.issues.listComments({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            issue_number: context.issue.number,
+          });
+          const botComment = comments.find(comment => {
+            return comment.user.type === 'Bot' && comment.body.includes('Terraform Output')
+          });
+          
+          var allChanges = `
+            \n
+            | *Type* | *Resource* | *Change* |
+            | ----- | ---- | ---- |
+            `
+            
+          for(var curResource in outcome.resource_changes) {
+
+            if ((outcome.resource_changes[curResource].change.actions.toString()!="no-op") && (outcome.resource_changes[curResource].change.actions.toString()!="read")) {
+                  allChanges += 
+                  '|' + outcome.resource_changes[curResource].type +
+                  '|' + outcome.resource_changes[curResource].name + 
+                  '|' + outcome.resource_changes[curResource].change.actions.toString() + '|\n';
+            }
+          }
+          
+          const output = "#### Terraform Output " + allChanges;
+
+          // 3. Delete previous comment so PR timeline makes sense
+          if (botComment) {
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: botComment.id,
+            });
+          }
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          });
+          
