@@ -1,60 +1,60 @@
 name: 'Terraform Local Destroy'
 description: "Performs a Terraform Destroy"
 inputs:
-  business-unit-name:
-    required: true
-  platform:
+  initiative:
     required: true
   environment:
     required: true
   service-name:
-    required: true
+    required: false
   revision:
-    required: true
+    required: false
+  is-infra-script:
+    type: boolean
+    required: true  
   git-organization:
-    required: true    
-  deployment_key:
     required: true
+  aws-bucket-prefix:
+    required: true    
   aws-region:
     required: true
     description: Region where to run Terraform script
-  aws-bucket-prefix:
+  shared-client-id:
     required: true
-  fs-shared-username:
+  shared-secret:
     required: true
-  fs-shared-token:
+  aws-github-role:
     required: true
+    description: Role to be used to run Terraform script
   aws-main-role:
     required: true
     description: Role to be used to run Terraform script
-  aws-core-role:
+  aws-admin-role:
     required: true
     description: Additional role to access AWS Core Account
-  message:
-    required: true
 
 runs:
   using: "composite"
   steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
       
     - name: Prepare Environment
-      uses: fullsteam-corp-shared/hosted-aws-shared-actions/.github/actions/tf/tf-prepare@master
+      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-prepare@tf-actions
       with:
-        business-unit-name: ${{ inputs.business-unit-name }}
-        platform: ${{ inputs.platform }}
-        environment: ${{ env.environment }}
+        initiative: ${{ inputs.initiative }}
+        environment: ${{ inputs.environment }}
         service-name: ${{ inputs.service-name }}
+        revision: ${{ inputs.revision }}
         git-organization: ${{ inputs.git-organization }}
-        revision: ${{ env.revision }}
-        deployment_key: ${{ inputs.deployment_key }}
+        is-infra-script: ${{ inputs.is-infra-script }}        
         aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
         aws-region: ${{ inputs.aws-region }}
-        fs-shared-username: ${{ inputs.fs-shared-username }}
-        fs-shared-token: ${{ inputs.fs-shared-token }}
+        shared-client-id: ${{ inputs.shared-client-id }}
+        shared-secret: ${{ inputs.shared-secret }}
+        aws-github-role: ${{ inputs.aws-github-role }}
         aws-main-role: ${{ inputs.aws-main-role }}
-        aws-core-role: ${{ inputs.aws-core-role }}
+        aws-admin-role: ${{ inputs.aws-admin-role }}
 
     - name: Terraform Destroy
       working-directory: ./terraform
