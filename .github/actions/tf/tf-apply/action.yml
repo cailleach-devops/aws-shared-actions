@@ -32,8 +32,6 @@ inputs:
   aws-admin-role:
     required: true
     description: Additional role to access AWS Core Account
-  message:
-    required: true
 
 runs:
   using: "composite"
