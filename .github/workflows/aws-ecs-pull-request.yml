@@ -3,19 +3,42 @@ name: 'AwsPullRequest'
 on:  
   workflow_call:
     inputs:
-      environment:
-        type: string      
+      initiative:
+        type: string
         required: true
-        
-env:
-  aws-bucket-prefix: ${{ vars.BUCKET_PREFIX }}
-  aws-admin-role: ${{ secrets[format('{0}_AWS_ADMIN_ROLE', inputs.environment)] }}
-  aws-github-role: ${{ secrets[format('{0}_AWS_GITHUB_ROLE', inputs.environment)] }}
-  aws-main-role: ${{ secrets[format('{0}_AWS_MASTER_ROLE', inputs.environment)] }}
-  aws-region: ${{ vars[format('{0}_AWS_REGION', inputs.environment)] }}
-  initiative: ${{ vars.INITIATIVE }}
-  shared-client-id: ${{ secrets.SHARED_CLIENT_ID }}
-  shared-secret: ${{ secrets.SHARED_SECRET }}
+      environment:
+        type: string
+        required: true
+      service-name:
+        type: string
+        required: false
+      revision:
+        type: string
+        required: false
+      git-organization:
+        type: string
+        required: true
+      aws-bucket-prefix:
+        type: string
+        required: true    
+      aws-region:
+        type: string
+        required: true
+        description: Region where to run Terraform script
+    secrets:
+      shared-client-id:
+        required: true
+      shared-secret:
+        required: true
+      aws-github-role:
+        required: true
+        description: Role to be used to run Terraform script
+      aws-main-role:
+        required: true
+        description: Role to be used to run Terraform script
+      aws-admin-role:
+        required: true
+        description: Additional role to access AWS Core Account        
 
 jobs:
 
@@ -31,14 +54,15 @@ jobs:
       name: Terraform Plan
       uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-plan@tf-actions
       with:
-        aws-bucket-prefix: ${{ env.aws-bucket-prefix }}
-        aws-admin-role: ${{ env.aws-admin-role }}
-        aws-github-role: ${{ env.aws-github-role }}
-        aws-main-role: ${{ env.aws-main-role }}
-        aws-region: ${{ env.aws-region }}
-        shared-client-id: ${{ env.shared-client-id }}
-        shared-secret: ${{ env.shared-secret }}
+        aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
+        aws-admin-role: ${{ secrets.aws-admin-role }}
+        aws-github-role: ${{ secrets.aws-github-role }}
+        aws-main-role: ${{ secrets.aws-main-role }}
+        aws-region: ${{ inputs.aws-region }}
+        shared-client-id: ${{ secrets.shared-client-id }}
+        shared-secret: ${{ secrets.shared-secret }}
         is-infra-script: true
-        initiative: ${{ env.initiative }}        
+        initiative: ${{ inputs.initiative }}
         environment: ${{ inputs.environment }}
+        git-organization: ${{ inputs.git-organization }}
         
