@@ -1,0 +1,67 @@
+name: 'AWS S3 Sync Files'
+description: "Sync the files between a source folder and a S3 bucket"
+inputs:
+  business-unit-name:
+    required: true
+  platform:
+    required: true
+  environment:
+    required: true
+  service-name:
+    required: true
+  deployment_key:
+    required: true
+  aws-region:
+    required: true
+  aws-main-role:
+    required: true
+  aws-core-role:
+    required: true
+  aws-core-account:
+    required: true
+  aws-bucket-prefix:
+    required: false
+  static-content-folder:
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      
+    - id: aws-resources
+      name: compose names
+      shell: bash
+      run: |
+         echo "content_destination=s3://${{inputs.aws-bucket-prefix}}-${{inputs.business-unit-name}}-${{inputs.platform}}-main-${{inputs.service-name}}-${{inputs.environment}}-s3" >> "$GITHUB_ENV"
+         echo "aws-upload-role=arn:aws:iam::${{inputs.aws-core-account}}:role/${{inputs.deployment_key}}-${{inputs.service-name}}-${{inputs.environment}}-s3-upload-role" >> "$GITHUB_ENV"      
+
+    - name: configure aws master credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-core-role }}
+        aws-region: ${{ inputs.aws-region }}
+        
+    - id: check-bucket-existence
+      shell: bash
+      continue-on-error: true
+      run: aws s3 ls ${{env.content_destination }}
+      
+    - id: bucket-not-found
+      if: steps.check-bucket-existence.outcome == 'failure'
+      shell: bash
+      run: | 
+        echo "The bucket wasn't found.  Did you remember to call static-site terraform module?"
+
+    - name: configure aws credentials
+      if: steps.check-bucket-existence.outcome == 'success'    
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ env.aws-upload-role }}
+        aws-region: ${{ inputs.aws-region }}  
+       
+    - id: copy-static-files
+      if: steps.check-bucket-existence.outcome == 'success'
+      shell: bash
+      run: aws s3 sync ${{ env.static-content-folder }} ${{env.content_destination }}
