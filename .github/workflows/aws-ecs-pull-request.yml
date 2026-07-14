@@ -52,7 +52,7 @@ jobs:
       
     - id: plan
       name: Terraform Plan
-      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-plan@tf-actions
+      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-plan@main
       with:
         aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
         aws-admin-role: ${{ secrets.aws-admin-role }}

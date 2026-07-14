@@ -55,7 +55,7 @@ jobs:
       uses: actions/checkout@v7
       
     - name: "Terraform Destroy"
-      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-destroy@tf-actions
+      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-destroy@main
       with:
         aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
         aws-admin-role: ${{ secrets.aws-admin-role }}
