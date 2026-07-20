@@ -5,25 +5,25 @@ inputs:
     required: true
   environment:
     required: true
-  service-name:
+  service_name:
     required: true
   revision:
     required: true
-  git-organization:
+  git_organization:
     required: true
-  aws-bucket-prefix:
+  aws_bucket_prefix:
     required: true
-  aws-region:
+  aws_region:
     required: true
     description: Region where to run Terraform script
-  fs-shared-username:
+  shared_username:
     required: true
-  fs-shared-token:
+  shared_secret:
     required: true
-  aws-main-role:
+  aws_main_role:
     required: true
     description: Role to be used to run Terraform script
-  aws-core-role:
+  aws_admin_role:
     required: true
     description: Additional role to access AWS Core Account
 
@@ -43,8 +43,8 @@ runs:
     - name: Create Credentials file
       shell: bash
       env:
-        AWS_CORE_ROLE: ${{ inputs.aws-core-role }}      
-        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_CORE_ROLE: ${{ inputs.aws_admin_role }}      
+        AWS_REGION: ${{ inputs.aws_region }}
       run: |
         cat << 'EOF' > credentials.aws
         
@@ -75,11 +75,11 @@ runs:
       shell: bash
       working-directory: ./terraform
       env:
-        AWS_REGION: ${{ inputs.aws-region }}
-        AWS_MAIN_ROLE: ${{ inputs.aws-main-role }}
-        AWS_CORE_ROLE: ${{ inputs.aws-core-role }}
-        STATE_BUCKET: "${{ inputs.aws-bucket-prefix}}-${{ inputs.initiative }}-terraform-state"
-        STATE_KEY: "app/${{ inputs.service-name}}/terraform.tfstate"      
+        AWS_REGION: ${{ inputs.aws_region }}
+        AWS_MAIN_ROLE: ${{ inputs.aws_main_role }}
+        AWS_CORE_ROLE: ${{ inputs.aws_admin_role }}
+        STATE_BUCKET: "${{ inputs.aws_bucket_prefix}}-${{ inputs.initiative }}-terraform-state"
+        STATE_KEY: "app/${{ inputs.service_name}}/terraform.tfstate"      
       run: | 
         jinja2 providers.jinja --strict \
           -D region="$AWS_REGION" \
@@ -99,9 +99,9 @@ runs:
           platform="${{ inputs.platform }}"
           deployment_key="${{ inputs.deployment_key }}"
           environment="${{ inputs.environment }}"
-          bucket_prefix="${{ inputs.aws-bucket-prefix}}"
-          git-organization="${{ inputs.git-organization }}"
-          service_name="${{ inputs.service-name}}"
+          bucket_prefix="${{ inputs.aws_bucket_prefix}}"
+          git_organization="${{ inputs.git_organization }}"
+          service_name="${{ inputs.service_name}}"
           revision="${{ inputs.revision }}"
         EOF
    
@@ -110,7 +110,7 @@ runs:
       shell: bash
       working-directory: ./terraform
       run: | 
-        git config --global url."https://${{ inputs.fs-shared-username }}:${{ inputs.fs-shared-token }}@github.com".insteadOf "https://github.com"
+        git config --global url."https://${{ inputs.fs-shared_username }}:${{ inputs.fs-shared_secret }}@github.com".insteadOf "https://github.com"
         git config --global advice.detachedHead false
         
         terraform init

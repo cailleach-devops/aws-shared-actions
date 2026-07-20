@@ -5,31 +5,31 @@ inputs:
     required: true
   environment:
     required: true
-  service-name:
+  service_name:
     required: false
   revision:
     required: false
-  is-infra-script:
+  is_infra_script:
     type: boolean
     required: true  
-  git-organization:
+  git_organization:
     required: true
-  aws-bucket-prefix:
+  aws_bucket_prefix:
     required: true    
-  aws-region:
+  aws_region:
     required: true
     description: Region where to run Terraform script
-  shared-client-id:
+  shared_client_id:
     required: true
-  shared-secret:
+  shared_secret:
     required: true
-  aws-github-role:
-    required: true
-    description: Role to be used to run Terraform script
-  aws-main-role:
+  aws_github_role:
     required: true
     description: Role to be used to run Terraform script
-  aws-admin-role:
+  aws_main_role:
+    required: true
+    description: Role to be used to run Terraform script
+  aws_admin_role:
     required: true
     description: Additional role to access AWS Core Account
 
@@ -44,17 +44,17 @@ runs:
       with:
         initiative: ${{ inputs.initiative }}
         environment: ${{ inputs.environment }}
-        service-name: ${{ inputs.service-name }}
+        service_name: ${{ inputs.service_name }}
         revision: ${{ inputs.revision }}
-        git-organization: ${{ inputs.git-organization }}
-        is-infra-script: ${{ inputs.is-infra-script }}        
-        aws-bucket-prefix: ${{ inputs.aws-bucket-prefix }}
-        aws-region: ${{ inputs.aws-region }}
-        shared-client-id: ${{ inputs.shared-client-id }}
-        shared-secret: ${{ inputs.shared-secret }}
-        aws-github-role: ${{ inputs.aws-github-role }}
-        aws-main-role: ${{ inputs.aws-main-role }}
-        aws-admin-role: ${{ inputs.aws-admin-role }}
+        git_organization: ${{ inputs.git_organization }}
+        is_infra_script: ${{ inputs.is_infra_script }}        
+        aws_bucket_prefix: ${{ inputs.aws_bucket_prefix }}
+        aws_region: ${{ inputs.aws_region }}
+        shared_client_id: ${{ inputs.shared_client_id }}
+        shared_secret: ${{ inputs.shared_secret }}
+        aws_github_role: ${{ inputs.aws_github_role }}
+        aws_main_role: ${{ inputs.aws_main_role }}
+        aws_admin_role: ${{ inputs.aws_admin_role }}
        
     - name: Terraform Plan
       id: plan
