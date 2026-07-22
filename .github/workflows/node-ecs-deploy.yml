@@ -1,4 +1,4 @@
-name: 'AwsPullRequest'
+name: 'AwsDeploy'
 
 on:  
   workflow_call:
@@ -38,21 +38,24 @@ on:
         description: Role to be used to run Terraform script
       aws_admin_role:
         required: true
-        description: Additional role to access AWS Core Account        
+        description: Additional role to access AWS Core Account  
+
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
-
-  terraform-plan:
+  
+  terraform-apply:
     runs-on: ubuntu-latest
 
     steps:
     - id: checkout
       name: checkout
       uses: actions/checkout@v7
-
-    - id: plan
-      name: Terraform Plan
-      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-plan@main
+      
+    - name: "Terraform Deploy"
+      uses: cailleach-devops/aws-shared-actions/.github/actions/tf/tf-apply@main
       with:
         aws_bucket_prefix: ${{ inputs.aws_bucket_prefix }}
         aws_admin_role: ${{ secrets.aws_admin_role }}
@@ -79,3 +82,43 @@ jobs:
       uses: cailleach-devops/aws-shared-actions/.github/actions/node/node-build@main
       with:
         node_version: '24'
+
+  database-apply:
+    runs-on: ubuntu-latest
+    steps:
+    - id: checkout
+      name: checkout
+      uses: actions/checkout@v7
+      
+    - name: "Someday"
+      shell: bash
+      run: echo "TO BE IMPLEMENTED..."
+
+  app-publish:
+    runs-on: ubuntu-latest
+    needs: [ database-apply, terraform-apply, app-build]
+
+    steps:
+    - id: checkout
+      name: checkout
+      uses: actions/checkout@v7
+
+    - name: Docker Deploy
+      uses: cailleach-devops/aws-shared-actions/.github/actions/node/node-docker-deploy@main
+      with:
+        node_version: '24'
+        initiative: ${{ inputs.initiative }}
+        service_name: ${{github.event.repository.name}}
+        environment: ${{ inputs.environment}}
+        revision: ${{ inputs.revision }}
+        aws_region: ${{ inputs.aws-region }}
+        aws_role: ${{ inputs.aws-role }}
+
+
+  app-rollout:
+    runs-on: ubuntu-latest
+    needs: [ app-publish]
+
+    steps:
+    - name: Wait for Finish
+      run: echo "Finished..."
